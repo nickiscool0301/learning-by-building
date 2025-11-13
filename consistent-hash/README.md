@@ -8,7 +8,7 @@ A complete consistent hashing system with:
 - **MD5 Hashing**: Uniform distribution of keys
 - **Add/Remove Nodes**: Dynamic scaling with minimal key redistribution
 
-## Key Learnings from the Demo
+## Key Testing from the Demo
 
 ### 1. **Minimal Redistribution** (Demo 2)
 - When adding a 4th server, only **~25%** of keys moved
@@ -47,35 +47,3 @@ Key Lookup:
 2. Find first server clockwise
 3. That server handles the key
 ```
-
-## Real-World Applications
-
-- **Load Balancers**: HAProxy, Nginx
-- **Distributed Caches**: Redis Cluster, Memcached
-- **Databases**: Cassandra, DynamoDB, Riak
-- **CDNs**: Distribute content across edge servers
-- **Sharding**: Partition data across database nodes
-
-## Try These Experiments
-
-1. **Modify virtual nodes**: Change the value in demo constructors
-2. **Add more servers**: See how distribution changes
-3. **Remove servers**: Observe minimal key movement
-4. **Different hash functions**: Try SHA-256 instead of MD5
-5. **Custom node types**: Use `ConsistentHash<Server>` with a Server class
-
-## Running the Code
-
-```bash
-cd consistent-hash
-javac ConsistentHash.java ConsistentHashDemo.java
-java ConsistentHashDemo
-```
-
-## Next Steps to Explore
-
-- Add weighted nodes (some servers handle more load)
-- Implement node failure detection
-- Add monitoring/metrics
-- Build a distributed cache using this
-- Test with network partitions
