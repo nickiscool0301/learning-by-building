@@ -1,5 +1,4 @@
 import time
-from typing import Optional
 
 """
 Token Bucket Rate Limiter Implementation
