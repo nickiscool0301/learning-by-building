@@ -1,5 +1,7 @@
 package rpc
 
+import "time"
+
 type MessageType uint8
 
 const (
@@ -17,10 +19,12 @@ type Message struct {
 }
 
 type Task struct {
-	ID       string
-	Filename string
-	Content  string
-	Status   TaskStatus
+	ID         string
+	Filename   string
+	Content    string
+	Status     TaskStatus
+	AssignedTo string
+	AssignedAt time.Time
 }
 
 type TaskStatus uint8

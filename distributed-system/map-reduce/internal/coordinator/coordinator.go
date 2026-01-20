@@ -1,13 +1,14 @@
 package coordinator
 
 import (
+	"map-reduce/internal/rpc"
 	"sync"
 	"time"
 )
 
 type Coordinator struct {
 	mu           sync.Mutex
-	tasks        map[string]*Task       //taskId -> Task
+	tasks        map[string]*rpc.Task   //taskId -> Task
 	pendingQueue []string               //taskId waiting to be assigned
 	workers      map[string]*WorkerInfo //workerId -> WorkerInfo
 	results      map[string]int         //aggregated word counts
@@ -22,7 +23,7 @@ type WorkerInfo struct {
 
 func New() *Coordinator {
 	c := &Coordinator{
-		tasks:       make(map[string]*Task),
+		tasks:       make(map[string]*rpc.Task),
 		workers:     make(map[string]*WorkerInfo),
 		results:     make(map[string]int),
 		taskTimeout: 10 * time.Second,
@@ -48,9 +49,9 @@ func (c *Coordinator) checkWorkerHealth() {
 
 		// Check for time-out tasks
 		for _, task := range c.tasks {
-			if task.Status == TaskInProgress &&
+			if task.Status == rpc.TaskInProgress &&
 				now.Sub(task.AssignedAt) > c.taskTimeout {
-				task.Status = TaskPending
+				task.Status = rpc.TaskPending
 				c.pendingQueue = append(c.pendingQueue, task.ID)
 			}
 		}
@@ -62,15 +63,15 @@ func (c *Coordinator) handleWorkerFailure(workerID string) {
 	worker := c.workers[workerID]
 	if worker.CurrentTaskID != "" {
 		task := c.tasks[worker.CurrentTaskID]
-		if task.Status == TaskInProgress {
-			task.Status = TaskPending
+		if task.Status == rpc.TaskInProgress {
+			task.Status = rpc.TaskPending
 			c.pendingQueue = append(c.pendingQueue, task.ID)
 		}
 	}
 	delete(c.workers, workerID)
 }
 
-func (c *Coordinator) AssignTask(workerID string) *Task {
+func (c *Coordinator) AssignTask(workerID string) *rpc.Task {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -82,7 +83,7 @@ func (c *Coordinator) AssignTask(workerID string) *Task {
 	c.pendingQueue = c.pendingQueue[1:]
 
 	task := c.tasks[taskID]
-	task.Status = TaskInProgress
+	task.Status = rpc.TaskInProgress
 	task.AssignedTo = workerID
 	task.AssignedAt = time.Now()
 
@@ -98,11 +99,11 @@ func (c *Coordinator) HandleResult(taskID string, counts map[string]int) {
 	defer c.mu.Unlock()
 
 	task, ok := c.tasks[taskID]
-	if !ok || task.Status == TaskCompleted {
+	if !ok || task.Status == rpc.TaskCompleted {
 		return
 	}
 
-	task.Status = TaskCompleted
+	task.Status = rpc.TaskCompleted
 
 	// Aggregate results
 	for word, count := range counts {
