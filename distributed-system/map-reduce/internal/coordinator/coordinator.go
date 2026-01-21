@@ -125,15 +125,16 @@ func (c *Coordinator) HandleHeartbeat(payload []byte) (rpc.MessageType, []byte, 
 
 	if worker, ok := c.workers[workerID]; ok {
 		worker.LastHeartbeat = time.Now()
+		fmt.Printf("[coordinator] Heartbeat from %s\n", workerID)
 	} else {
 		// new worker, need to register
 		c.workers[workerID] = &WorkerInfo{
 			ID:            workerID,
 			LastHeartbeat: time.Now(),
 		}
+		fmt.Printf("[coordinator] New worker registered: %s\n", workerID)
 	}
 	return rpc.MsgAck, nil, nil
-
 }
 
 func (c *Coordinator) HandleRequestTask(payload []byte) (rpc.MessageType, []byte, error) {
@@ -141,11 +142,16 @@ func (c *Coordinator) HandleRequestTask(payload []byte) (rpc.MessageType, []byte
 	var workerID string
 	gob.NewDecoder(bytes.NewReader(payload)).Decode(&workerID)
 
+	fmt.Printf("[coordinator] Task request from %s\n", workerID)
+
 	// Assign task
 	task := c.AssignTask(workerID)
 	if task == nil {
+		fmt.Printf("[coordinator] No task available for %s\n", workerID)
 		return rpc.MsgTaskResponse, nil, nil
 	}
+
+	fmt.Printf("[coordinator] Assigned task %s to %s\n", task.ID, workerID)
 
 	// Encode task to payload
 	var buf bytes.Buffer
@@ -161,6 +167,8 @@ func (c *Coordinator) HandleReportTask(payload []byte) (rpc.MessageType, []byte,
 	if err := gob.NewDecoder(bytes.NewReader(payload)).Decode(&result); err != nil {
 		return rpc.MsgAck, nil, err
 	}
+
+	fmt.Printf("[coordinator] Result received for task %s: %v\n", result.TaskID, result.Counts)
 
 	// handle result
 	c.HandleResult(result.TaskID, result.Counts)

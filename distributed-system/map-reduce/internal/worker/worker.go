@@ -3,6 +3,7 @@ package worker
 import (
 	"bytes"
 	"encoding/gob"
+	"fmt"
 	"map-reduce/internal/rpc"
 	"strings"
 	"time"
@@ -59,6 +60,7 @@ func (w *Worker) countWords(content string) map[string]int {
 func (w *Worker) sendHeartbeats() {
 	ticker := time.NewTicker(5 * time.Second)
 	for range ticker.C {
+		fmt.Printf("[%s] Sending heartbeat\n", w.id)
 		w.client.Send(rpc.Message{
 			Type:    rpc.MsgHeartbeat,
 			Payload: encodeWorkerID(w.id),
@@ -73,22 +75,27 @@ func encodeWorkerID(id string) []byte {
 }
 
 func (w *Worker) requestTask() *rpc.Task {
+	fmt.Printf("[%s] Requesting task...\n", w.id)
 	resp, err := w.client.Send(rpc.Message{
 		Type:    rpc.MsgRequestTask,
 		Payload: encodeWorkerID(w.id),
 	})
 	if err != nil || resp.Type != rpc.MsgTaskResponse || len(resp.Payload) == 0 {
+		fmt.Printf("[%s] No task available\n", w.id)
 		return nil
 	}
 
 	var task rpc.Task
 	if err := gob.NewDecoder(bytes.NewReader(resp.Payload)).Decode(&task); err != nil {
+		fmt.Printf("[%s] Failed to decode task: %v\n", w.id, err)
 		return nil
 	}
+	fmt.Printf("[%s] Got task: %s\n", w.id, task.ID)
 	return &task
 }
 
 func (w *Worker) reportResult(taskID string, counts map[string]int) {
+	fmt.Printf("[%s] Reporting result for %s: %v\n", w.id, taskID, counts)
 	result := rpc.WordCountResult{
 		TaskID: taskID,
 		Counts: counts,
